@@ -46,6 +46,16 @@
             gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
+            align-items: center;
+        }
+        .vendor-select-box {
+            background-color: #fff;
+            border: 2px solid var(--primary);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--primary);
         }
         button {
             border: none;
@@ -199,9 +209,19 @@
     </header>
 
     <div class="container">
+        <!-- ส่วนบน: เลือกแม่ค้า และสแกนสมาชิก -->
         <div class="top-bar">
+            <div>
+                <label for="vendor-name" style="font-weight: bold; color: var(--primary);">🏪 เลือกร้านค้า/แม่ค้า: </label>
+                <select id="vendor-name" class="vendor-select-box">
+                    <option value="แผงที่ 1 - แม่จันดี">แผงที่ 1 - แม่จันดี (ผักสด)</option>
+                    <option value="แผงที่ 2 - พ่อคำดี">แผงที่ 2 - พ่อคำดี (ข้าวอินทรีย์)</option>
+                    <option value="แผงที่ 3 - แม่บัวเขียว">แผงที่ 3 - แม่บัวเขียว (ของแห้งแปรรูป)</option>
+                    <option value="แผงทั่วไป/สินค้าชุมชน">แผงทั่วไป/สินค้าชุมชน</option>
+                </select>
+            </div>
             <button class="btn-member" onclick="simScanMember()">📷 สแกนสมาชิก (จำลองคุณหมอ)</button>
-            <div id="member-status" style="align-self: center; font-weight: bold; color: #15803d;"></div>
+            <div id="member-status" style="font-weight: bold; color: #15803d;"></div>
             <div id="reward-notification"></div>
         </div>
 
@@ -215,7 +235,8 @@
         </div>
 
         <div class="product-grid" id="product-list">
-            </div>
+            <!-- สินค้าจะถูกเจนด้วย JS ตรงนี้ -->
+        </div>
     </div>
 
     <div class="checkout-bar">
@@ -246,46 +267,6 @@
     </div>
 
     <script>
-        // ฟังก์ชันสร้างเสียงเอฟเฟกต์ตอบรับแบบไม่ต้องพึ่งพาไฟล์ภายนอก
-        function playSuccessSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                
-                oscillator.type = 'sine';
-                // ตั้งความถี่เสียงสูงใส (เสียงติ๊ง)
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
-                
-                // ปรับเสียงให้ค่อยๆ เบาลงจนเงียบสนิทอย่างนุ่มนวล
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.4);
-            } catch (e) {
-                console.log("เบราว์เซอร์ยังไม่ได้ปลดล็อกระบบเสียง:", e);
-            }
-        }
-        // ฟังก์ชันสั่งให้ระบบออกเสียงพูดภาษาไทยของแม่ค้า
-        function speakMarketHint(text) {
-            try {
-                // ตัดคำว่า "💬 พูดคุยทิ้งท้าย:" ออกเพื่อให้ระบบพูดเฉพาะประโยคของแม่ค้าจริงๆ
-                let cleanText = text.replace("💬 พูดคุยทิ้งท้าย:", "").trim();
-                
-                const utterance = new SpeechSynthesisUtterance(cleanText);
-                utterance.lang = 'th-TH'; // กำหนดให้เป็นภาษาไทย
-                utterance.rate = 1.0;     // ความเร็วเสียงปกติ (ปรับเป็น 0.9 ได้ถ้าอยากให้พูดช้าๆ อ่อนโยน)
-                utterance.pitch = 1.1;    // ปรับโทนเสียงให้สูงขึ้นเล็กน้อยเพื่อให้ฟังดูเป็นมิตรเป็นกันเอง
-                
-                window.speechSynthesis.speak(utterance);
-            } catch (e) {
-                console.log("เบราว์เซอร์ไม่รองรับระบบออกเสียงพูด:", e);
-            }
-        }
         let products = [
             { id: 1, name: '🥬 ผักกาดจอ', price: 30, cat: 'ผักสด', qty: 0 },
             { id: 2, name: '🍅 มะเขือเทศ', price: 50, cat: 'ผักสด', qty: 0 },
@@ -297,12 +278,40 @@
         let currentTab = 'all';
         let currentMember = null;
 
+        function playSuccessSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.4);
+            } catch (e) {
+                console.log("ระบบเสียงมีปัญหา:", e);
+            }
+        }
+
+        function speakMarketHint(text) {
+            try {
+                let cleanText = text.replace("💬 พูดคุยทิ้งท้าย:", "").trim();
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'th-TH';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.log("ระบบเสียงพูดมีปัญหา:", e);
+            }
+        }
+
         function simScanMember() {
-            currentMember = {
-                name: "พญ. วิภาดา",
-                points: 540 
-            };
-            document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+            currentMember = { name: "พญ. วิภาดา", points: 540 };
+            document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
             checkRewardEligibility();
         }
 
@@ -322,8 +331,8 @@
         function redeemReward() {
             if(currentMember) {
                 currentMember.points -= 500;
-                alert("🎁 บันทึกการมอบผ้ากันเปื้อนเรียบร้อย! (หัก 500 แต้ม)");
-                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+                alert("🎁 บันทึกการมอบผ้ากันเปื้อนเรียบร้อย!");
+                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
                 checkRewardEligibility();
             }
         }
@@ -331,7 +340,6 @@
         function renderProducts() {
             const grid = document.getElementById('product-list');
             grid.innerHTML = '';
-
             let filtered = products.filter(p => currentTab === 'all' || p.cat === currentTab);
 
             filtered.forEach(p => {
@@ -360,7 +368,6 @@
                 </div>
             `;
             grid.appendChild(customCard);
-            
             updateCartSummary();
         }
 
@@ -388,7 +395,6 @@
                     items.push(`${p.name.split(' ')[1] || p.name} x${p.qty}`);
                 }
             });
-
             document.getElementById('total-amount').innerText = total;
             document.getElementById('basket-summary').innerText = items.length > 0 ? items.join(', ') : "ไม่มีสินค้าในตะกร้า";
         }
@@ -413,7 +419,6 @@
             }
         }
 
-        // แก้ไขฟังก์ชันบันทึกข้อมูลเพื่อส่งเข้า Google Sheets ได้สมบูรณ์แบบ
         function processCheckout() {
             let total = parseFloat(document.getElementById('total-amount').innerText);
             if(total <= 0) {
@@ -428,36 +433,36 @@
             document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint === 'ทั่วไป/ไม่ได้ระบุ' ? 'คุณลูกค้า' : nameHint}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเน้อเจ้า"`;
 
             openModal('success-modal');
-            playSuccessSound(); // ส่งเสียงติ๊งเตือนก่อน
+            playSuccessSound();
             
-            // สั่งให้ระบบพูดประโยคทิ้งท้ายที่อยู่บนหน้าจอออกมาเป็นเสียงพูดทันที
-            let speechText = document.getElementById('speech-hint').innerText;
-            speakMarketHint(speechText);
+            setTimeout(() => {
+                let speechText = document.getElementById('speech-hint').innerText;
+                speakMarketHint(speechText);
+            }, 300);
             
             let itemsText = products.filter(p => p.qty > 0).map(p => `${p.name.split(' ')[1] || p.name} x${p.qty}`).join(', ');
+            let selectedVendor = document.getElementById('vendor-name').value; // ดึงชื่อแม่ค้าแผงที่เลือก
             
-            // ปรับปรุงการส่งแบบฟอร์มเพื่อแก้ไขปัญหาการบล็อกจาก Browser (CORS)
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzgoRQREHAJ95_5EFqh0hRSv8MZ-ZBs_AfTmSSW7YgHR1Sf4Dtl0BVies7Or8RdIfQefQ/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbz77K9Y8HdQa-0wGKZoYU3QnzTzRX7gEvRjXpBQD5V2WAWtmiwp18Kgbi7eOnmIjeFR_w/exec';
             
             fetch(scriptURL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     'memberName': nameHint,
                     'items': itemsText,
                     'total': total,
-                    'points': pointsEarned
+                    'points': pointsEarned,
+                    'vendorName': selectedVendor // ส่งชื่อแม่ค้าเข้า Sheets
                 })
             })
-            .then(() => console.log('ส่งคำสัญญาส่งข้อมูลเข้า Sheets สำเร็จ'))
+            .then(() => console.log('ส่งข้อมูลสำเร็จ'))
             .catch(err => console.error('เกิดข้อผิดพลาด:', err));
 
             if(currentMember) {
                 currentMember.points += pointsEarned;
-                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
             }
 
             setTimeout(() => {
@@ -472,4 +477,5 @@
     </script>
 </body>
 </html>
+
 
