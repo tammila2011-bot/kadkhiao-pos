@@ -411,7 +411,7 @@
             // --- เพิ่มท่อนนี้เพื่อส่งข้อมูลเข้า Google Sheets ---
             let itemsText = products.filter(p => p.qty > 0).map(p => `${p.name.split(' ')[1] || p.name} x${p.qty}`).join(', ');
             
-            fetch('วาง_URL_เว็บแอป_Google_Apps_Script_ที่คัดลอกมาตรงนี้', {
+            fetch('https://script.google.com/macros/s/AKfycbz77K9Y8HdQa-0wGKZoYU3QnzTzRX7gEvRjXpBQD5V2WAWtmiwp18Kgbi7eOnmIjeFR_w/exec', {
                 method: 'POST',
                 mimeType: 'application/json',
                 body: JSON.stringify({
