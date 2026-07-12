@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กาดเขียวเชียงของ - ระบบบันทึกการซื้อขายพืชผักปลอดภัย</title>
+    <style>
+        :root {
+            --primary: #2e5a27;
+            --primary-light: #eaf2e8;
+            --accent: #b45309;
+            --bg: #f7f9f6;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: #333;
+        }
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 15px;
+            padding-bottom: 120px; /* กันบังแถบล่าง */
+        }
+        /* ส่วนบน: สแกนสมาชิก และ หมวดหมู่ */
+        .top-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        button {
+            border: none;
+            padding: 12px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-member {
+            background-color: #15803d;
+            color: white;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+        }
+        .tab {
+            background-color: #e0e0e0;
+            color: #555;
+            white-space: nowrap;
+        }
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        /* ส่วนกลาง: Grid สินค้า */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .product-card {
+            background-color: var(--card-bg);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .product-card.custom-btn {
+            border: 2px dashed #999;
+            background-color: #f0f4ef;
+            cursor: pointer;
+        }
+        .product-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .product-price {
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .qty-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        .btn-qty {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 18px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qty-val {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 20px;
+        }
+        /* แถบล่างสุด: คิดเงิน */
+        .checkout-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--primary-light);
+            border-top: 3px solid var(--primary);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+        }
+        .total-info {
+            font-size: 16px;
+        }
+        .total-price {
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .btn-checkout {
+            background-color: var(--primary);
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+        /* Popup / Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .modal input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .reward-alert {
+            background-color: #fffbeb;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>กาดเขียวเชียงของ POS 🥬</header>
+
+    <div class="container">
+        <!-- ส่วนบน -->
+        <div class="top-bar">
+            <button class="btn-member" onclick="simScanMember()">📷 สแกนสมาชิก (จำลองคุณหมอ)</button>
+            <div id="member-status" style="align-self: center; font-weight: bold; color: #15803d;"></div>
+            <div id="reward-notification"></div>
+        </div>
+
+        <div class="top-bar">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('all')">🌟 ทั้งหมด</button>
+                <button class="tab" onclick="switchTab('ผักสด')">🥬 ผักสด/ผลไม้</button>
+                <button class="tab" onclick="switchTab('ข้าว')">🌾 ข้าว/ธัญพืช</button>
+                <button class="tab" onclick="switchTab('ของแห้ง')">🏺 อาหารแห้ง/เครื่องปรุง</button>
+            </div>
+        </div>
+
+        <!-- ส่วนกริดสินค้า -->
+        <div class="product-grid" id="product-list">
+            <!-- สินค้าจะถูกเจนด้วย JS ตรงนี้ -->
+        </div>
+    </div>
+
+    <!-- แถบคิตเงินลอยล่าง -->
+    <div class="checkout-bar">
+        <div class="total-info">
+            <div id="basket-summary">ไม่มีสินค้าในตะกร้า</div>
+            <div class="total-price">รวม: <span id="total-amount">0</span> บาท</div>
+        </div>
+        <button class="btn-checkout" onclick="processCheckout()">💰 คิดเงิน / บันทึก</button>
+    </div>
+
+    <!-- ป๊อปอัปสินค้าอิสระ/กรอกเอง -->
+    <div class="modal" id="custom-item-modal">
+        <div class="modal-content">
+            <h3>➕ เพิ่มสินค้าอิสระ</h3>
+            <input type="text" id="custom-name" placeholder="ชื่อสินค้า (เช่น ผักกูดพื้นบ้าน)">
+            <input type="number" id="custom-price" placeholder="ราคา (บาท)" inputmode="numeric">
+            <br><br>
+            <button class="btn-member" onclick="addCustomItemToArray()">ตกลง</button>
+            <button class="tab" onclick="closeModal('custom-item-modal')">ยกเลิก</button>
+        </div>
+    </div>
+
+    <!-- ป๊อปอัปสำเร็จ/Health Score -->
+    <div class="modal" id="success-modal">
+        <div class="modal-content" style="background-color: #ecfdf5; border: 2px solid #059669;">
+            <h2 style="color: #059669; margin: 0;">🌟 บันทึกสำเร็จ!</h2>
+            <p style="font-size: 18px;">ได้รับแต้มสุขภาพปลอดภัยเพิ่ม <span id="earned-points" style="font-weight:bold; color:#059669;">0</span> แต้ม</p>
+            <div style="background: white; padding: 10px; border-radius: 4px; font-style: italic; color: #555;" id="speech-hint"></div>
+        </div>
+    </div>
+
+    <script>
+        // ข้อมูลสินค้าเริ่มต้น
+        let products = [
+            { id: 1, name: '🥬 ผักกาดจอ', price: 30, cat: 'ผักสด', qty: 0 },
+            { id: 2, name: ' Tomato มะเขือเทศ', price: 50, cat: 'ผักสด', qty: 0 },
+            { id: 3, name: '🌾 ข้าวกล้องอินทรีย์', price: 70, cat: 'ข้าว', qty: 0 },
+            { id: 4, name: '🍯 น้ำตาลมะพร้าวแท้', price: 60, cat: 'ของแห้ง', qty: 0 },
+            { id: 5, name: '🌶️ พริกแห้งเชียงของ', price: 40, cat: 'ของแห้ง', qty: 0 }
+        ];
+
+        let currentTab = 'all';
+        let currentMember = null;
+
+        // จำลองข้อมูลสแกนสมาชิก (คุณหมอ)
+        function simScanMember() {
+            currentMember = {
+                name: "พญ. วิภาดา",
+                points: 540 // แต้มเกิน 500 ระบบจะเตือนแจกผ้ากันเปื้อนทันที
+            };
+            document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+            checkRewardEligibility();
+        }
+
+        // ตรวจสอบสิทธิ์รางวัล
+        function checkRewardEligibility() {
+            const rewardDiv = document.getElementById('reward-notification');
+            if (currentMember && currentMember.points >= 500) {
+                rewardDiv.innerHTML = `
+                    <div class="reward-alert">
+                        🎁 สิทธิ์รับรางวัล: ผ้ากันเปื้อนกาดเขียว 1 ผืน! 
+                        <button onclick="redeemReward()" style="padding:4px 8px; font-size:12px; background:#b45309; color:white; margin-left:10px;">กดรับรางวัล</button>
+                    </div>`;
+            } else {
+                rewardDiv.innerHTML = '';
+            }
+        }
+
+        function redeemReward() {
+            if(currentMember) {
+                currentMember.points -= 500;
+                alert("🎁 บันทึกการมอบผ้ากันเปื้อนเรียบร้อย! (หัก 500 แต้ม)");
+                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+                checkRewardEligibility();
+            }
+        }
+
+        // แสดงผลรายการสินค้า
+        function renderProducts() {
+            const grid = document.getElementById('product-list');
+            grid.innerHTML = '';
+
+            // กรองตามหมวดหมู่
+            let filtered = products.filter(p => currentTab === 'all' || p.cat === currentTab);
+
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="product-name">${p.name}</div>
+                        <div class="product-price">${p.price} บ.</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="btn-qty" onclick="updateQty(${p.id}, -1)">-</button>
+                        <span class="qty-val">${p.qty}</span>
+                        <button class="btn-qty" onclick="updateQty(${p.id}, 1)">+</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // เพิ่มปุ่มสินค้าอิสระไว้ท้ายสุดเสมอ
+            const customCard = document.createElement('div');
+            customCard.className = 'product-card custom-btn';
+            customCard.onclick = () => openModal('custom-item-modal');
+            customCard.innerHTML = `
+                <div style="margin: auto; font-weight: bold; color: #666;">
+                    <span style="font-size: 24px;">➕</span><br>สินค้าอื่นๆ / กรอกเอง
+                </div>
+            `;
+            grid.appendChild(customCard);
+            
+            updateCartSummary();
+        }
+
+        function updateQty(id, change) {
+            const p = products.find(prod => prod.id === id);
+            if (p) {
+                p.qty = Math.max(0, p.qty + change);
+                renderProducts();
+            }
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderProducts();
+        }
+
+        // คำนวณตะกร้าและยอดรวม
+        function updateCartSummary() {
+            let total = 0;
+            let items = [];
+            products.forEach(p => {
+                if(p.qty > 0) {
+                    total += (p.price * p.qty);
+                    items.push(`${p.name.split(' ')[1] || p.name} x${p.qty}`);
+                }
+            });
+
+            document.getElementById('total-amount').innerText = total;
+            document.getElementById('basket-summary').innerText = items.length > 0 ? items.join(', ') : "ไม่มีสินค้าในตะกร้า";
+        }
+
+        // ระบบเพิ่มสินค้ากรอกเอง
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function addCustomItemToArray() {
+            let name = document.getElementById('custom-name').value.trim() || "สินค้าทั่วไป";
+            let price = parseFloat(document.getElementById('custom-price').value) || 0;
+            let cat = currentTab === 'all' ? 'ผักสด' : currentTab; // ล็อกหมวดหมู่ตามแท็บปัจจุบันอัตโนมัติ
+
+            if (price > 0) {
+                let newId = products.length + 1;
+                products.push({ id: newId, name: `🛍️ ${name}`, price: price, cat: cat, qty: 1 });
+                closeModal('custom-item-modal');
+                // รีเซ็ตค่าฟอร์ม
+                document.getElementById('custom-name').value = '';
+                document.getElementById('custom-price').value = '';
+                renderProducts();
+            } else {
+                alert("กรุณากรอกราคาที่ถูกต้อง");
+            }
+        }
+
+        // คิดเงินสำเร็จและแสดง Health Score
+        function processCheckout() {
+            let total = parseFloat(document.getElementById('total-amount').innerText);
+            if(total <= 0) {
+                alert("กรุณาเลือกสินค้าก่อนคิดเงินครับ");
+                return;
+            }
+
+            let pointsEarned = Math.floor(total / 10); // ทุก 10 บาทได้ 1 แต้มสุขภาพ
+            document.getElementById('earned-points').innerText = pointsEarned;
+            
+            // ประโยคไกด์ให้แม่ค้าพูดทิ้งท้ายตามกลุ่มลูกค้า
+            let nameHint = currentMember ? currentMember.name : "คุณลูกค้า";
+            document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเน้อเจ้า"`;
+
+            openModal('success-modal');
+
+            // อัปเดตแต้มสมาชิกในระบบจำลอง
+            if(currentMember) {
+                currentMember.points += pointsEarned;
+                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (แต้มสะสม: ${currentMember.points} แต้ม)`;
+            }
+
+            // ปิดอัตโนมัติใน 4 วินาทีเพื่อรับคิวถัดไป และล้างตะกร้า
+            setTimeout(() => {
+                closeModal('success-modal');
+                products.forEach(p => p.qty = 0); // ล้างตระกร้า
+                checkRewardEligibility();
+                renderProducts();
+            }, 4000);
+        }
+
+        // สั่งรันหน้าจอครั้งแรก
+        renderProducts();
+    </script>
+</body>
+</html>
