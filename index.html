@@ -398,6 +398,23 @@
             document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเน้อเจ้า"`;
 
             openModal('success-modal');
+            // --- เพิ่มท่อนนี้เพื่อส่งข้อมูลเข้า Google Sheets ---
+            let itemsText = products.filter(p => p.qty > 0).map(p => `${p.name.split(' ')[1] || p.name} x${p.qty}`).join(', ');
+            
+            fetch('วาง_URL_เว็บแอป_Google_Apps_Script_ที่คัดลอกมาตรงนี้', {
+                method: 'POST',
+                mimeType: 'application/json',
+                body: JSON.stringify({
+                    memberName: currentMember ? currentMember.name : "ทั่วไป/ไม่ได้ระบุ",
+                    items: itemsText,
+                    total: total,
+                    points: pointsEarned
+                })
+            })
+            .then(res => res.json())
+            .then(response => console.log('บันทึกเข้า Sheets สำเร็จ:', response))
+            .catch(err => console.error('เกิดข้อผิดพลาดในการส่งข้อมูล:', err));
+            // ---------------------------------------------
 
             // อัปเดตแต้มสมาชิกในระบบจำลอง
             if(currentMember) {
