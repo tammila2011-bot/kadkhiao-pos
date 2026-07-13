@@ -70,6 +70,12 @@
             background-color: #15803d;
             color: white;
         }
+        .btn-cancel {
+            background-color: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
         .tabs {
             display: flex;
             gap: 8px;
@@ -200,6 +206,14 @@
             margin-top: 10px;
             font-weight: bold;
         }
+        .member-details-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -209,19 +223,18 @@
     </header>
 
     <div class="container">
-        <!-- ส่วนบน: เลือกแม่ค้า และสแกนสมาชิก -->
         <div class="top-bar">
             <div>
-                <label for="vendor-name" style="font-weight: bold; color: var(--primary);">🏪 เลือกร้านค้า/แม่ค้า: </label>
+                <label for="vendor-name" style="font-weight: bold; color: var(--primary);">🏪 เลือกร้านค้า: </label>
                 <select id="vendor-name" class="vendor-select-box">
                     <option value="แผงที่ 1 - แม่จันดี">แผงที่ 1 - แม่จันดี (ผักสด)</option>
                     <option value="แผงที่ 2 - พ่อคำดี">แผงที่ 2 - พ่อคำดี (ข้าวอินทรีย์)</option>
-                    <option value="แผงที่ 3 - แม่บัวเขียว">แผงที่ 3 - แม่บัวเขียว (ของแห้งแปรรูป)</option>
+                    <option value="แผงที่ 3 - แม่บัวเขียว">แผงที่ 3 - แม่บัวเขียว (ของแห้ง)</option>
                     <option value="แผงทั่วไป/สินค้าชุมชน">แผงทั่วไป/สินค้าชุมชน</option>
                 </select>
             </div>
-            <button class="btn-member" onclick="simScanMember()">📷 สแกนสมาชิก (จำลองคุณหมอ)</button>
-            <div id="member-status" style="font-weight: bold; color: #15803d;"></div>
+            <button class="btn-member" onclick="openModal('member-search-modal')">🔍 ค้นหา/สแกนผู้ซื้อ</button>
+            <div id="member-status" style="font-weight: bold; color: #15803d; display: flex; align-items: center; gap: 10px;"></div>
             <div id="reward-notification"></div>
         </div>
 
@@ -235,8 +248,7 @@
         </div>
 
         <div class="product-grid" id="product-list">
-            <!-- สินค้าจะถูกเจนด้วย JS ตรงนี้ -->
-        </div>
+            </div>
     </div>
 
     <div class="checkout-bar">
@@ -245,6 +257,31 @@
             <div class="total-price">รวม: <span id="total-amount">0</span> บาท</div>
         </div>
         <button class="btn-checkout" onclick="processCheckout()">💰 คิดเงิน / บันทึก</button>
+    </div>
+
+    <div class="modal" id="member-search-modal">
+        <div class="modal-content">
+            <h3>🔍 ค้นหา/ยืนยันสมาชิกผู้ซื้อ</h3>
+            <p style="font-size: 14px; color: #666; margin: 0;">กดปุ่มจำลองเพื่อสแกนคิวอาร์ หรือพิมพ์เบอร์ค้นหา</p>
+            <div style="margin-top: 10px;">
+                <button class="btn-member" style="background-color: #1e3a8a; width: 100%; margin-bottom: 8px;" onclick="simScanBarcode('พญ. วิภาดา', 540)">📷 จำลอง: สแกน QR ของ พญ.วิภาดา</button>
+                <button class="btn-member" style="background-color: #0d9488; width: 100%;" onclick="simScanBarcode('นพ. สมชาย', 120)">📷 จำลอง: สแกน QR ของ นพ.สมชาย</button>
+            </div>
+            <div style="margin: 15px 0; border-top: 1px dashed #ccc; padding-top: 10px;">
+                <input type="text" id="search-phone" placeholder="หรือพิมพ์เบอร์โทรศัพท์ลูกค้า..." inputmode="numeric">
+                <button class="tab" style="width: 100%; margin-top: 5px; background: #6b7280; color: white;" onclick="searchByPhone()">ค้นหาด้วยเบอร์โทร</button>
+            </div>
+            
+            <div id="search-result-zone" style="display: none;">
+                <div class="member-details-card">
+                    <b>ชื่อลูกค้า:</b> <span id="res-name" style="color:var(--primary); font-size:16px;">-</span><br>
+                    <b>แต้มสะสมเดิม:</b> <span id="res-points" style="color:var(--accent);">-</span> แต้ม
+                </div>
+                <button class="btn-member" style="width: 100%; padding: 12px;" onclick="confirmMemberSelection()">✅ ยืนยันชื่อผู้ซื้อท่านนี้</button>
+            </div>
+            <br>
+            <button class="tab" style="width: 100%;" onclick="closeModal('member-search-modal')">ปิดหน้าต่าง</button>
+        </div>
     </div>
 
     <div class="modal" id="custom-item-modal">
@@ -276,7 +313,8 @@
         ];
 
         let currentTab = 'all';
-        let currentMember = null;
+        let currentMember = null;     // สมาชิกที่ได้รับการยืนยันแล้ว
+        let tempScannedMember = null; // ข้อมูลที่สแกนเจอแต่ยังไม่กดยืนยัน
 
         function playSuccessSound() {
             try {
@@ -291,9 +329,7 @@
                 gainNode.connect(audioCtx.destination);
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + 0.4);
-            } catch (e) {
-                console.log("ระบบเสียงมีปัญหา:", e);
-            }
+            } catch (e) { console.log(e); }
         }
 
         function speakMarketHint(text) {
@@ -304,15 +340,60 @@
                 utterance.rate = 1.0;
                 utterance.pitch = 1.1;
                 window.speechSynthesis.speak(utterance);
-            } catch (e) {
-                console.log("ระบบเสียงพูดมีปัญหา:", e);
+            } catch (e) { console.log(e); }
+        }
+
+        // 1. ฟังก์ชันสแกนคิวอาร์โค้ดจำลอง
+        function simScanBarcode(name, points) {
+            tempScannedMember = { name: name, points: points };
+            showMemberPreview();
+        }
+
+        // 2. ฟังก์ชันค้นหาด้วยเบอร์โทรจำลอง
+        function searchByPhone() {
+            let phone = document.getElementById('search-phone').value.trim();
+            if(!phone) { alert("กรุณากรอกเบอร์โทรศัพท์"); return; }
+            
+            // จำลองว่าหาเจอผู้ซื้อทั่วไปชื่อ คุณสมศรี
+            tempScannedMember = { name: "คุณสมศรี (ชาวบ้านประจำ)", points: 80 };
+            showMemberPreview();
+        }
+
+        // แสดงผลตัวอย่างชื่อให้แม่ค้าตรวจสอบ
+        function showMemberPreview() {
+            if(tempScannedMember) {
+                document.getElementById('res-name').innerText = tempScannedMember.name;
+                document.getElementById('res-points').innerText = tempScannedMember.points;
+                document.getElementById('search-result-zone').style.display = 'block';
             }
         }
 
-        function simScanMember() {
-            currentMember = { name: "พญ. วิภาดา", points: 540 };
-            document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
-            checkRewardEligibility();
+        // 3. ปุ่มยืนยันข้อมูลลูกค้า (เมื่อตรวจสอบชื่อถูกต้องแล้ว)
+        function confirmMemberSelection() {
+            if(tempScannedMember) {
+                currentMember = { ...tempScannedMember };
+                tempScannedMember = null;
+                
+                // อัปเดต UI หน้าแรก
+                document.getElementById('member-status').innerHTML = `
+                    <span>👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)</span>
+                    <button class="btn-cancel" onclick="clearMember()">❌ เปลี่ยนคน</button>
+                `;
+                
+                // ล้างฟอร์มค้นหาและปิดหน้าต่าง
+                document.getElementById('search-phone').value = '';
+                document.getElementById('search-result-zone').style.display = 'none';
+                closeModal('member-search-modal');
+                
+                checkRewardEligibility();
+            }
+        }
+
+        // ฟังก์ชันยกเลิก/ล้างรายชื่อลูกค้า
+        function clearMember() {
+            currentMember = null;
+            document.getElementById('member-status').innerHTML = '';
+            document.getElementById('reward-notification').innerHTML = '';
         }
 
         function checkRewardEligibility() {
@@ -332,7 +413,10 @@
             if(currentMember) {
                 currentMember.points -= 500;
                 alert("🎁 บันทึกการมอบผ้ากันเปื้อนเรียบร้อย!");
-                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
+                document.getElementById('member-status').innerHTML = `
+                    <span>👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)</span>
+                    <button class="btn-cancel" onclick="clearMember()">❌ เปลี่ยนคน</button>
+                `;
                 checkRewardEligibility();
             }
         }
@@ -441,9 +525,9 @@
             }, 300);
             
             let itemsText = products.filter(p => p.qty > 0).map(p => `${p.name.split(' ')[1] || p.name} x${p.qty}`).join(', ');
-            let selectedVendor = document.getElementById('vendor-name').value; // ดึงชื่อแม่ค้าแผงที่เลือก
+            let selectedVendor = document.getElementById('vendor-name').value;
             
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzgoRQREHAJ95_5EFqh0hRSv8MZ-ZBs_AfTmSSW7YgHR1Sf4Dtl0BVies7Or8RdIfQefQ/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbz77K9Y8HdQa-0wGKZoYU3QnzTzRX7gEvRjXpBQD5V2WAWtmiwp18Kgbi7eOnmIjeFR_w/exec';
             
             fetch(scriptURL, {
                 method: 'POST',
@@ -454,7 +538,7 @@
                     'items': itemsText,
                     'total': total,
                     'points': pointsEarned,
-                    'vendorName': selectedVendor // ส่งชื่อแม่ค้าเข้า Sheets
+                    'vendorName': selectedVendor
                 })
             })
             .then(() => console.log('ส่งข้อมูลสำเร็จ'))
@@ -462,13 +546,16 @@
 
             if(currentMember) {
                 currentMember.points += pointsEarned;
-                document.getElementById('member-status').innerText = `👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)`;
+                document.getElementById('member-status').innerHTML = `
+                    <span>👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)</span>
+                    <button class="btn-cancel" onclick="clearMember()">❌ เปลี่ยนคน</button>
+                `;
             }
 
             setTimeout(() => {
                 closeModal('success-modal');
                 products.forEach(p => p.qty = 0);
-                checkRewardEligibility();
+                clearMember(); // รีเซ็ตผู้ซื้อเป็นทั่วไปหลังจบคิวเพื่อความปลอดภัย
                 renderProducts();
             }, 4000);
         }
