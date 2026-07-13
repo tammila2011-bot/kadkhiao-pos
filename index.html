@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กาดเขียวเชียงของ - ระบบบันทึกการซื้อขายพืชผักปลอดภัย</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
             --primary: #2e5a27;
@@ -181,7 +180,6 @@
             align-items: center;
             z-index: 1000;
             padding: 20px;
-            overflow-y: auto;
         }
         .modal-content {
             background: white;
@@ -193,11 +191,12 @@
         }
         .modal input {
             width: 90%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            font-size: 18px; /* ปรับขนาดตัวอักษรให้แม่ค้าพิมพ์ง่ายขึ้น */
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
         }
         .reward-alert {
             background-color: #fffbeb;
@@ -215,13 +214,6 @@
             border-radius: 6px;
             margin: 15px 0;
             text-align: left;
-        }
-        #reader {
-            width: 100%;
-            background: #000;
-            margin-top: 10px;
-            border-radius: 6px;
-            overflow: hidden;
         }
     </style>
 </head>
@@ -242,7 +234,7 @@
                     <option value="แผงทั่วไป/สินค้าชุมชน">แผงทั่วไป/สินค้าชุมชน</option>
                 </select>
             </div>
-            <button class="btn-member" onclick="startScannerModal()">📷 ค้นหา/สแกนผู้ซื้อ</button>
+            <button class="btn-member" onclick="openSearchModal()">🔍 ค้นหาด้วยเบอร์โทรลูกค้า</button>
             <div id="member-status" style="font-weight: bold; color: #15803d; display: flex; align-items: center; gap: 10px;"></div>
             <div id="reward-notification"></div>
         </div>
@@ -257,7 +249,8 @@
         </div>
 
         <div class="product-grid" id="product-list">
-            </div>
+            <!-- สินค้าจะถูกเจนด้วย JS ตรงนี้ -->
+        </div>
     </div>
 
     <div class="checkout-bar">
@@ -268,34 +261,26 @@
         <button class="btn-checkout" onclick="processCheckout()">💰 คิดเงิน / บันทึก</button>
     </div>
 
+    <!-- ป๊อปอัปค้นหาผ่านเบอร์โทรศัพท์ (รุ่นเรียบง่าย) -->
     <div class="modal" id="member-search-modal">
         <div class="modal-content">
-            <h3>📷 สแกน QR Code สมาชิก</h3>
+            <h3>🔍 ค้นหาสมาชิกผู้ซื้อ</h3>
+            <p style="font-size: 14px; color: #666; margin: 0;">ให้ลูกค้าบอกเบอร์โทรศัพท์แล้วพิมพ์ลงในช่องนี้</p>
             
-            <div id="reader"></div>
+            <input type="text" id="search-phone" placeholder="กรอกเบอร์โทรศัพท์ลูกค้า..." inputmode="numeric">
+            <button class="btn-member" style="width: 100%; background-color: var(--primary);" onclick="searchByPhone()">🔍 ค้นหาข้อมูล</button>
             
-            <div style="margin: 15px 0; border-top: 1px dashed #ccc; padding-top: 10px;">
-                <input type="text" id="search-phone" placeholder="หรือพิมพ์รหัส/เบอร์โทรศัพท์ลูกค้า..." inputmode="numeric">
-                <button class="tab" style="width: 100%; margin-top: 5px; background: #6b7280; color: white;" onclick="searchByCodeOrPhone(document.getElementById('search-phone').value)">ค้นหาข้อมูล</button>
-            </div>
-            
+            <!-- โซนรอแม่ค้ายืนยันชื่อ -->
             <div id="search-result-zone" style="display: none;">
                 <div class="member-details-card">
-                    <b>สถานะสมาชิก:</b> <span id="res-status" style="font-weight:bold;">-</span><br>
+                    <b>สถานะ:</b> <span id="res-status" style="font-weight:bold;">-</span><br>
                     <b>ชื่อผู้ซื้อ:</b> <span id="res-name" style="color:var(--primary); font-size:16px; font-weight:bold;">-</span><br>
                     <b>แต้มสะสมเดิม:</b> <span id="res-points" style="color:var(--accent); font-weight:bold;">-</span> แต้ม
                 </div>
                 <button class="btn-member" style="width: 100%; padding: 12px;" onclick="confirmMemberSelection()">✅ ยืนยันข้อมูลผู้ซื้อท่านนี้</button>
             </div>
-            
-            <div style="margin-top: 15px; text-align: left; font-size: 12px; color: #777;">
-                <details>
-                    <summary>🛠️ ปุ่มจำลองสำหรับทดสอบ (ไม่ต้องส่องกล้อง)</summary>
-                    <button class="tab" style="background:#1e3a8a; color:white; font-size:11px; margin:2px;" onclick="simScanBarcode('0812345678')">จำลองสแกนเบอร์ 0812345678</button>
-                </details>
-            </div>
-            <br>
-            <button class="tab" style="width: 100%; background-color:#dc2626; color:white;" onclick="closeScannerModal()">❌ ปิดกล้อง / ปิดหน้าต่าง</button>
+            <br><br>
+            <button class="tab" style="width: 100%; background-color:#6b7280; color:white;" onclick="closeModal('member-search-modal')">ปิดหน้าต่าง</button>
         </div>
     </div>
 
@@ -319,7 +304,7 @@
     </div>
 
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzgoRQREHAJ95_5EFqh0hRSv8MZ-ZBs_AfTmSSW7YgHR1Sf4Dtl0BVies7Or8RdIfQefQ/exec';
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbz77K9Y8HdQa-0wGKZoYU3QnzTzRX7gEvRjXpBQD5V2WAWtmiwp18Kgbi7eOnmIjeFR_w/exec';
         
         let products = [
             { id: 1, name: '🥬 ผักกาดจอ', price: 30, cat: 'ผักสด', qty: 0 },
@@ -332,7 +317,6 @@
         let currentTab = 'all';
         let currentMember = null;     
         let tempScannedMember = null; 
-        let html5QrcodeScanner = null;
 
         function playSuccessSound() {
             try {
@@ -361,62 +345,29 @@
             } catch (e) { console.log(e); }
         }
 
-        // เปิดป๊อปอัปและเปิดใช้งานกล้องหลังมือถือ
-        function startScannerModal() {
+        function openSearchModal() {
             openModal('member-search-modal');
+            document.getElementById('search-phone').value = '';
             document.getElementById('search-result-zone').style.display = 'none';
-            
-            // เรียกใช้งานระบบเปิดกล้อง
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, // บังคับเปิดกล้องหลังมือถือ
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (qrCodeMessage) => {
-                    // เมื่อสแกนเจอคิวอาร์โค้ดสำเร็จ
-                    playSuccessSound();
-                    html5QrcodeScanner.stop(); // หยุดกล้องเพื่อประมวลผล
-                    searchByCodeOrPhone(qrCodeMessage);
-                },
-                (errorMessage) => { /* ปิด log ความถี่การหาไม่เจอ */ }
-            ).catch(err => {
-                console.log("ไม่สามารถเปิดกล้องได้ หรือเปิดในคอมพิวเตอร์คอมไม่มีกล้องหลัง:", err);
-            });
+            setTimeout(() => document.getElementById('search-phone').focus(), 300); // โฟกัสช่องกรอกทันที
         }
 
-        // ปิดกล้องและปิดป๊อปอัป
-        function closeScannerModal() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    closeModal('member-search-modal');
-                }).catch(() => {
-                    closeModal('member-search-modal');
-                });
-            } else {
-                closeModal('member-search-modal');
-            }
-        }
-
-        // จำลองคีย์บอร์ดกดสแกนผ่านปุ่มเทส
-        function simScanBarcode(code) {
-            if (html5QrcodeScanner) { html5QrcodeScanner.stop().catch(()=>{}); }
-            searchByCodeOrPhone(code);
-        }
-
-        // ยิงข้อมูลไปหาตารางฐานข้อมูลหลังบ้านเพื่อค้นหาชื่อและแต้มสมาชิก
-        function searchByCodeOrPhone(idValue) {
-            if(!idValue) { alert("กรุณากรอกหรือสแกนรหัส"); return; }
+        // ค้นหาข้อมูลสมาชิกผ่านเบอร์โทรศัพท์จริงจากแท็บ members
+        function searchByPhone() {
+            let phoneValue = document.getElementById('search-phone').value.trim();
+            if(!phoneValue) { alert("กรุณากรอกเบอร์โทรศัพท์ของลูกค้าก่อนครับ"); return; }
             
             document.getElementById('search-result-zone').style.display = 'block';
-            document.getElementById('res-status').innerText = "⏳ กำลังค้นหาข้อมูลจากแท็บ members...";
+            document.getElementById('res-status').innerText = "⏳ กำลังค้นหาข้อมูล...";
             document.getElementById('res-name').innerText = "-";
             document.getElementById('res-points').innerText = "-";
 
-            fetch(`${scriptURL}?id=${encodeURIComponent(idValue)}`)
+            fetch(`${scriptURL}?id=${encodeURIComponent(phoneValue)}`)
             .then(res => res.json())
             .then(data => {
                 if(data.status === "success" && data.found) {
                     tempScannedMember = {
-                        id: idValue,
+                        id: phoneValue,
                         name: data.name,
                         points: data.points
                     };
@@ -425,20 +376,20 @@
                     document.getElementById('res-name').innerText = `${data.name} (${data.type})`;
                     document.getElementById('res-points').innerText = data.points;
                 } else {
-                    // หากไม่พบเบอร์ในระบบ จะถือว่าเป็นสมาชิกใหม่ชั่วคราว
+                    // หากไม่พบเบอร์ในระบบ จะสร้างโปรไฟล์ชั่วคราวให้
                     tempScannedMember = {
-                        id: idValue,
-                        name: `ลูกค้าใหม่ (รหัส: ${idValue})`,
+                        id: phoneValue,
+                        name: `ลูกค้าใหม่ (เบอร์: ${phoneValue})`,
                         points: 0
                     };
-                    document.getElementById('res-status').innerText = "🟡 ยังไม่มีข้อมูลในระบบ (จะสร้างบัญชีให้ใหม่เมื่อกดขาย)";
+                    document.getElementById('res-status').innerText = "🟡 ยังไม่มีชื่อในระบบ (จะสร้างบัญชีให้ใหม่เมื่อกดบันทึกคิดเงิน)";
                     document.getElementById('res-status').style.color = "#d97706";
                     document.getElementById('res-name').innerText = tempScannedMember.name;
                     document.getElementById('res-points').innerText = "0";
                 }
             })
             .catch(err => {
-                alert("เชื่อมต่อฐานข้อมูลล้มเหลว กรุณาตรวจสอบอินเทอร์เน็ต");
+                alert("เชื่อมต่อล้มเหลว กรุณาตรวจสอบการต่ออินเทอร์เน็ต");
                 document.getElementById('search-result-zone').style.display = 'none';
             });
         }
@@ -453,10 +404,7 @@
                     <button class="btn-cancel" onclick="clearMember()">❌ เปลี่ยนคน</button>
                 `;
                 
-                document.getElementById('search-phone').value = '';
-                document.getElementById('search-result-zone').style.display = 'none';
                 closeModal('member-search-modal');
-                
                 checkRewardEligibility();
             }
         }
@@ -482,9 +430,8 @@
 
         function redeemReward() {
             if(currentMember) {
-                // อัปเดตหักแต้มในระบบจำลองหน้าจอชั่วคราว (แต่การหักแต้มถาวรควรทำที่ชีต)
                 currentMember.points -= 500;
-                alert("🎁 มอบผ้ากันเปื้อนเรียบร้อย! ระบบบันทึกสิทธิ์การรับเรียบร้อย");
+                alert("🎁 บันทึกการมอบผ้ากันเปื้อนเรียบร้อย!");
                 document.getElementById('member-status').innerHTML = `
                     <span>👤 ผู้ซื้อ: ${currentMember.name} (${currentMember.points} แต้ม)</span>
                     <button class="btn-cancel" onclick="clearMember()">❌ เปลี่ยนคน</button>
@@ -611,10 +558,10 @@
                     'total': total,
                     'points': pointsEarned,
                     'vendorName': selectedVendor,
-                    'memberId': idHint // ส่ง ID เพื่อให้ระบบไปอัปเดตบวกคะแนนในชีต
+                    'memberId': idHint
                 })
             })
-            .then(() => console.log('ส่งข้อมูลเข้าสเปรดชีตสำเร็จ'))
+            .then(() => console.log('บันทึกสำเร็จ'))
             .catch(err => console.error(err));
 
             setTimeout(() => {
