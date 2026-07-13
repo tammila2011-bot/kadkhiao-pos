@@ -353,6 +353,7 @@
         }
 
         // ค้นหาข้อมูลสมาชิกผ่านเบอร์โทรศัพท์จริงจากแท็บ members
+        // ฟังก์ชันรองรับการดึงข้อมูลสมาชิกแบบทะลุกำแพงความปลอดภัยเบราว์เซอร์
         function searchByPhone() {
             let phoneValue = document.getElementById('search-phone').value.trim();
             if(!phoneValue) { alert("กรุณากรอกเบอร์โทรศัพท์ของลูกค้าก่อนครับ"); return; }
@@ -362,36 +363,46 @@
             document.getElementById('res-name').innerText = "-";
             document.getElementById('res-points').innerText = "-";
 
-            fetch(`${scriptURL}?id=${encodeURIComponent(phoneValue)}`)
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === "success" && data.found) {
-                    tempScannedMember = {
-                        id: phoneValue,
-                        name: data.name,
-                        points: data.points
-                    };
-                    document.getElementById('res-status').innerText = "🟢 พบข้อมูลสมาชิก";
-                    document.getElementById('res-status').style.color = "green";
-                    document.getElementById('res-name').innerText = `${data.name} (${data.type})`;
-                    document.getElementById('res-points').innerText = data.points;
-                } else {
-                    // หากไม่พบเบอร์ในระบบ จะสร้างโปรไฟล์ชั่วคราวให้
-                    tempScannedMember = {
-                        id: phoneValue,
-                        name: `ลูกค้าใหม่ (เบอร์: ${phoneValue})`,
-                        points: 0
-                    };
-                    document.getElementById('res-status').innerText = "🟡 ยังไม่มีชื่อในระบบ (จะสร้างบัญชีให้ใหม่เมื่อกดบันทึกคิดเงิน)";
-                    document.getElementById('res-status').style.color = "#d97706";
-                    document.getElementById('res-name').innerText = tempScannedMember.name;
-                    document.getElementById('res-points').innerText = "0";
-                }
-            })
-            .catch(err => {
-                alert("เชื่อมต่อล้มเหลว กรุณาตรวจสอบการต่ออินเทอร์เน็ต");
+            // ใช้เทคนิค JSONP เพื่อเลี่ยงปัญหาการบล็อกข้ามโดเมน (CORS)
+            const oldScript = document.getElementById('jsonp-search');
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'jsonp-search';
+            script.src = `${scriptURL}?id=${encodeURIComponent(phoneValue)}&callback=handleSearchResponse`;
+            
+            script.onerror = function() {
+                alert("ไม่สามารถติดต่อฐานข้อมูลได้ กรุณาตรวจสอบลิงก์สคริปต์หลังบ้าน");
                 document.getElementById('search-result-zone').style.display = 'none';
-            });
+            };
+            
+            document.body.appendChild(script);
+        }
+
+        // ฟังก์ชันรับผลลัพธ์ข้อมูลสมาชิกที่สะท้อนกลับมาจาก Google Sheets
+        function handleSearchResponse(data) {
+            if(data.status === "success" && data.found) {
+                tempScannedMember = {
+                    id: data.id,
+                    name: data.name,
+                    points: data.points
+                };
+                document.getElementById('res-status').innerText = "🟢 พบข้อมูลสมาชิก";
+                document.getElementById('res-status').style.color = "green";
+                document.getElementById('res-name').innerText = `${data.name} (${data.type})`;
+                document.getElementById('res-points').innerText = data.points;
+            } else {
+                let phoneValue = document.getElementById('search-phone').value.trim();
+                tempScannedMember = {
+                    id: phoneValue,
+                    name: `ลูกค้าใหม่ (เบอร์: ${phoneValue})`,
+                    points: 0
+                };
+                document.getElementById('res-status').innerText = "🟡 ยังไม่มีชื่อในระบบ (จะสร้างบัญชีให้ใหม่เมื่อกดบันทึกคิดเงิน)";
+                document.getElementById('res-status').style.color = "#d97706";
+                document.getElementById('res-name').innerText = tempScannedMember.name;
+                document.getElementById('res-points').innerText = "0";
+            }
         }
 
         function confirmMemberSelection() {
