@@ -546,7 +546,7 @@
             let nameHint = currentMember ? currentMember.name : "ทั่วไป/ไม่ได้ระบุ";
             let idHint = currentMember ? currentMember.id : "ทั่วไป/ไม่ได้ระบุ";
             
-            document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint.startsWith('ลูกค้าใหม่') || nameHint === 'ทั่วไป/ไม่ได้ระบุ' ? 'คุณลูกค้า' : nameHint.split(' ')[0]}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเน้อเจ้า"`;
+            document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint.startsWith('ลูกค้าใหม่') || nameHint === 'ทั่วไป/ไม่ได้ระบุ' ? 'คุณลูกค้า' : nameHint.split(' ')[0]}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเจ้า"`;
 
             // เปิดหน้าต่างและส่งเสียงทันทีโดยไม่ต้องรอนาน
             openModal('success-modal');
