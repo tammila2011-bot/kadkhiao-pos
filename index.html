@@ -548,13 +548,12 @@
             
             document.getElementById('speech-hint').innerText = `💬 พูดคุยทิ้งท้าย: "ขอบคุณเจ้า ${nameHint.startsWith('ลูกค้าใหม่') || nameHint === 'ทั่วไป/ไม่ได้ระบุ' ? 'คุณลูกค้า' : nameHint.split(' ')[0]}! รอบนี้ได้แต้มสุขภาพปลอดภัยเพิ่ม ${pointsEarned} แต้มเน้อเจ้า"`;
 
+            // เปิดหน้าต่างและส่งเสียงทันทีโดยไม่ต้องรอนาน
             openModal('success-modal');
             playSuccessSound();
             
-            setTimeout(() => {
-                let speechText = document.getElementById('speech-hint').innerText;
-                speakMarketHint(speechText);
-            }, 300);
+            let speechText = document.getElementById('speech-hint').innerText;
+            speakMarketHint(speechText); 
             
             let itemsText = products.filter(p => p.qty > 0).map(p => `${p.name.split(' ')[1] || p.name} x${p.qty}`).join(', ');
             let selectedVendor = document.getElementById('vendor-name').value;
@@ -575,12 +574,13 @@
             .then(() => console.log('บันทึกสำเร็จ'))
             .catch(err => console.error(err));
 
+            // ปรับจาก 4 วินาที ลดลงเหลือเพียง 2 วินาที (2000ms) ให้หน้าจอเคลียร์ไวขึ้น
             setTimeout(() => {
                 closeModal('success-modal');
                 products.forEach(p => p.qty = 0);
                 clearMember(); 
                 renderProducts();
-            }, 4000);
+            }, 2000);
         }
 
         renderProducts();
